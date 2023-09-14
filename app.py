@@ -11,14 +11,16 @@ import os
 # Incorporate styling Dash Bootstrap Components
 # external_stylesheets = [dbc.themes.CERULEAN]
 # OR
-#external_stylesheets = [dmc.theme.DEFAULT_COLORS]
-# app6 = Dash(__name__, external_stylesheets=external_stylesheets)
-dash_app  = Dash(__name__)
+# Incorporate styling Dash Mantine Components
+external_stylesheets = [dmc.theme.DEFAULT_COLORS]
+dash_app = Dash(__name__, external_stylesheets=external_stylesheets)
+
+# Specific to Azure:  Azure is ALSO looking for a Flask app variable named app!!!
 app = dash_app.server
 
 
 # Read in Data
-file_to_load = os.path.join( os.getcwd(), "df_airline_tweets.csv")
+file_to_load = os.path.join( os.getcwd(), "dash_texts_data/df_airline_tweets.csv")
 df = pd.read_csv(file_to_load)[ ['airline', 'airline_sentiment_confidence', 'negativereason_confidence', 'retweet_count']]
 
 
