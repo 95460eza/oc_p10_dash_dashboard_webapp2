@@ -13,13 +13,13 @@ import os
 # OR
 #external_stylesheets = [dmc.theme.DEFAULT_COLORS]
 # app6 = Dash(__name__, external_stylesheets=external_stylesheets)
-app6 = Dash(__name__)
+app = Dash(__name__)
 
 
 
 
 # Define the Web App Layout
-app6.layout = html.Div([
+app.layout = html.Div([
 
                         # The html.Div() (note the ABSENCE of []) DASH COMPONENT with children= parameter adds TEXT to the webpage
                         html.Div(children='Welcome DATA Apprentice')
@@ -27,5 +27,5 @@ app6.layout = html.Div([
                         ])
 
 #if __name__ == '__main__':
-#    app6.run(debug=True)
-#   app6.run(host='0.0.0.0', port=5000, debug=True)
+#    app.run(debug=True)
+#   app.run(host='0.0.0.0', port=5000, debug=True)

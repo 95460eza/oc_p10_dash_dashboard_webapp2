@@ -4,4 +4,4 @@
 
 #web: gunicorn --bind=0.0.0.0:8000 --timeout 600 --chdir app run:app6
 
-gunicorn --bind=0.0.0.0 --timeout 600 --chdir app run:app6
+gunicorn --bind=0.0.0.0 --timeout 600 --chdir app run:app

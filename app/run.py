@@ -1,4 +1,4 @@
-from dashboard_web_app_definition_code import app6
+from dashboard_web_app_definition_code import app
 
 if __name__ == '__main__':
     app6.run(host='0.0.0.0', port=8000, debug=True)

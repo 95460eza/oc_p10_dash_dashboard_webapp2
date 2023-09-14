@@ -1,6 +1,6 @@
 
 from dash import Dash
 
-from .views import app6
+from .views import app
 
 
