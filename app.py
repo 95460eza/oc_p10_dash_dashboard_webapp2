@@ -17,6 +17,9 @@ dash_app  = Dash(__name__)
 app = dash_app.server
 
 
+# Read in Data
+file_to_load = os.path.join( os.getcwd(), "df_airline_tweets.csv")
+df = pd.read_csv(file_to_load)[ ['airline', 'airline_sentiment_confidence', 'negativereason_confidence', 'retweet_count']]
 
 
 # Define the Web App Layout

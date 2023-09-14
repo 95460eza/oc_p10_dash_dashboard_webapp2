@@ -1,7 +1,0 @@
-# If your Flask app definition code FILE is hello.py and the Flask OBJECT in it is called myapp, use:
-# gunicorn --bind=0.0.0.0 --timeout 600 hello:myapp
-# (or gunicorn --bind=0.0.0.0 --timeout 600 --chdir website hello:myapp if the Flask app definition code file is in #a subfolder, named here website)
-
-#web: gunicorn --bind=0.0.0.0:8000 --timeout 600 --chdir app run:app
-
-gunicorn --bind=0.0.0.0 --timeout 600 app run:app
