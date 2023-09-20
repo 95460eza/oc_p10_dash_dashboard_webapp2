@@ -4,5 +4,7 @@ dash
 dash-bootstrap-components
 dash-mantine-components
 #streamlit
+nltk
+wordcloud
 
 
