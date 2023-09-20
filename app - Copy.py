@@ -97,7 +97,14 @@ def generate_wordcloud(words_as_long_string):
 
     #encoded_image = base64.b64encode(img.tostring()).decode("utf-8")
     return encoded_image
-    
+    #return encoded_image
+
+try:
+    res = generate_wordcloud("I AM A BIG MAN")
+    print("SUCCESS", type(res))
+except:
+    print("FAILURE")
+
 
 
 # Define the Web App Layout
