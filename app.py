@@ -40,6 +40,7 @@ df = pd.read_csv(file_to_load)
 df["airline_sentiment"] = pd.Categorical(df["airline_sentiment"])
 # Create a new NUMERIC column by converting category values to integers
 df["sentiment"] = df["airline_sentiment"].cat.codes
+df["tweet_length"] = df["text"].apply(lambda x: len(x))
 df = df.sort_values(by=["tweet_created"])
 #columns_to_keep = ['airline', 'retweet_count', 'sentiment']
 
@@ -119,7 +120,20 @@ dash_app.layout = dbc.Container([  html.Br(),
                                                dmc.Col( [ dash_table.DataTable( data=df.to_dict('records'), page_size=12, style_table={'overflowX': 'auto'} ) ],
                                                         span=6
                                                       )
-                                            ]),  
+                                            ]),
+
+                                   html.P("Tweets Length - Select an Airline:",  style={'font-size': '25px'}),
+                                   dmc.Grid([
+                                               dmc.RadioGroup([dmc.Radio(i, value=i) for i in buttons_to_display_airlines],
+                                                              id='radio-button-for-airlines3',
+                                                              value='Southwest', size="lg"
+                                                              ),
+
+                                               dmc.Col([dcc.Graph(figure={}, id='graph-tweet-length-to-display')],
+                                                       span=6
+                                                       ),
+                                           ]),
+
 
                                    html.P("Average Values - Select a Variable to Analyze:", style={'font-size': '25px'}),
                                    dmc.Grid([
@@ -177,6 +191,26 @@ dash_app.layout = dbc.Container([  html.Br(),
 
 
 # SETUP CALLBACK: It Enables the use of control components for building the interaction
+@callback(
+    # By CONVENTION you MUST provide all Outputs first. "component_property" are the parameters whose values the interaction will change
+    Output(component_id='graph-tweet-length-to-display', component_property='figure'),
+    Input(component_id ='radio-button-for-airlines3', component_property='value'),
+)
+def update_tweet_length_graph(chosen_airline):
+
+    if chosen_airline:
+
+        fig = px.histogram(df[df["airline"] == chosen_airline], x="tweet_length",
+                           text_auto='.0%', histnorm='probability',
+                           title="Distribution of Tweets Length by Airline",
+                           )
+        fig.update_traces(textposition="inside")
+        return fig
+
+    else:
+        return {'data': []}
+
+
 @callback(
     # By CONVENTION you MUST provide all Outputs first. "component_property" are the parameters whose values the interaction will change
     Output(component_id='graph-average-to-display', component_property='figure'),
@@ -295,7 +329,7 @@ def update_wordcloud(chosen_airline):
 
         try:
             encoded_image = generate_wordcloud(text)
-            print("Worked For WORDCLOUD!!!", type(encoded_image))
+            #print("Worked For WORDCLOUD!!!", type(encoded_image))
         except:
             print("Failed")
 
@@ -333,7 +367,9 @@ def update_wordcloud(chosen_airline):
         return {'data': []}
 
 
+
+
 if __name__ == '__main__':
     dash_app.run_server(debug=True)
-#    app.run(debug=True)
+#   app.run(debug=True)
 #   app.run(host='0.0.0.0', port=5000, debug=True)

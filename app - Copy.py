@@ -12,6 +12,8 @@ import pandas as pd
 import plotly.express as px
 import matplotlib.pyplot as plt
 import nltk
+# Download "stop words" list!
+nltk.download("stopwords")
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 # Download punctuation remover!
@@ -97,14 +99,7 @@ def generate_wordcloud(words_as_long_string):
 
     #encoded_image = base64.b64encode(img.tostring()).decode("utf-8")
     return encoded_image
-    #return encoded_image
-
-try:
-    res = generate_wordcloud("I AM A BIG MAN")
-    print("SUCCESS", type(res))
-except:
-    print("FAILURE")
-
+    
 
 
 # Define the Web App Layout
@@ -190,19 +185,24 @@ dash_app.layout = dbc.Container([  html.Br(),
 )
 def update_avge_graph(col_chosen):
 
-    fig = px.histogram(df, x='airline', y=col_chosen, histfunc='avg', title='Average Values by Airline')
-    for category in df['airline'].unique():
-        avg_value = df[df['airline'] == category][col_chosen].mean()
-        fig.add_annotation(
-            #text=f'Avg: {avg_value:.2f}',
-            text=f'{avg_value:.2f}',
-            x=category,
-            y=avg_value,
-            showarrow=False,
-            font=dict(size=12),
-            yshift=10
-        )
-    return fig
+    if col_chosen:
+
+        fig = px.histogram(df, x='airline', y=col_chosen, histfunc='avg', title='Average Values by Airline')
+        for category in df['airline'].unique():
+            avg_value = df[df['airline'] == category][col_chosen].mean()
+            fig.add_annotation(
+                #text=f'Avg: {avg_value:.2f}',
+                text=f'{avg_value:.2f}',
+                x=category,
+                y=avg_value,
+                showarrow=False,
+                font=dict(size=12),
+                yshift=10
+            )
+        return fig
+
+    else:
+        return {'data': []}
 
 @callback(
     # By CONVENTION you MUST provide all Outputs first. "component_property" are the parameters whose values the interaction will change
@@ -212,19 +212,24 @@ def update_avge_graph(col_chosen):
 )
 def update_poportion_graph(col_chosen):
 
-    fig = px.bar(
+    if col_chosen:
+
+        fig = px.bar(
         grouped[grouped["airline_sentiment"] == col_chosen],
         x="airline",
         y="proportion",
         text="proportion",
         title="Share of Selected Sentiment Out Of ALL Expressed for that Airline",
-    )
+        )
 
-    fig.update_traces(texttemplate="%{text:.2%}", textposition="inside")
-    fig.update_layout(
-        xaxis_title="Airline", yaxis_title="% Represented by Selected Sentiment"
-    )
-    return fig
+        fig.update_traces(texttemplate="%{text:.2%}", textposition="inside")
+        fig.update_layout(
+            xaxis_title="Airline", yaxis_title="% Represented by Selected Sentiment"
+        )
+        return fig
+
+    else:
+        return {'data': []}
 
 
 @callback(
@@ -234,32 +239,38 @@ def update_poportion_graph(col_chosen):
 
 )
 def update_words_frequency_graph(chosen_airline):
-    dict_of_users_tokens = {key: value for key, value in
-                            zip(df_tokenize[df_tokenize["airline"] == chosen_airline]["tweet_id"],
-                                df_tokenize[df_tokenize["airline"] == chosen_airline]["tokenized_tweet"]
-                                )
-                            }
 
-    text, concatenated_tokens = make_string_for_wordcloud(dict_of_users_tokens)
-    del text
+    if chosen_airline:
 
-    words_freq = pd.DataFrame(pd.Series(concatenated_tokens).value_counts()).reset_index()
-    words_freq.columns = ["word", "count"]
-    words_freq = words_freq.drop([0, 1])
+        dict_of_users_tokens = {key: value for key, value in
+                                zip(df_tokenize[df_tokenize["airline"] == chosen_airline]["tweet_id"],
+                                    df_tokenize[df_tokenize["airline"] == chosen_airline]["tokenized_tweet"]
+                                    )
+                                }
 
-    fig = px.bar(
-        words_freq.head(30),
-        x="word",
-        y="count",
-        text="count",
-        title="Top Words frequency in Tweets for Airline",
-    )
+        text, concatenated_tokens = make_string_for_wordcloud(dict_of_users_tokens)
+        del text
 
-    fig.update_traces(texttemplate="%{text:.0f}", textposition="outside")
-    fig.update_layout(
-        xaxis_title="Words in Tweets", yaxis_title="Word Frequency"
-    )
-    return fig
+        words_freq = pd.DataFrame(pd.Series(concatenated_tokens).value_counts()).reset_index()
+        words_freq.columns = ["word", "count"]
+        words_freq = words_freq.drop([0, 1])
+
+        fig = px.bar(
+            words_freq.head(30),
+            x="word",
+            y="count",
+            text="count",
+            title="Top Words frequency in Tweets for Airline",
+        )
+
+        fig.update_traces(texttemplate="%{text:.0f}", textposition="outside")
+        fig.update_layout(
+            xaxis_title="Words in Tweets", yaxis_title="Word Frequency"
+        )
+        return fig
+
+    else:
+        return {'data': []}
 
 
 @callback(
@@ -269,48 +280,57 @@ def update_words_frequency_graph(chosen_airline):
 
 )
 def update_wordcloud(chosen_airline):
-    dict_of_users_tokens = {key: value for key, value in
-                            zip(df_tokenize[df_tokenize["airline"] == chosen_airline]["tweet_id"],
-                                df_tokenize[df_tokenize["airline"] == chosen_airline]["tokenized_tweet"]
-                                )
-                            }
 
-    text, concatenated_tokens = make_string_for_wordcloud(dict_of_users_tokens)
-    #del concatenated_tokens
-    #print(text[0:50])
+    if chosen_airline:
 
-    encoded_image = generate_wordcloud(text)
-    #print("worked", type(wordcloud_plot.to_dict()))df_tokenize
-    print("worked")
-    return {
-        'data': [],
-        'layout': {
-            'images': [
-                {
-                    'source': 'data:image/png;base64,{}'.format(encoded_image),
-                    'x': 0,
-                    'y': 1,
-                    'xref': 'paper',
-                    'yref': 'paper',
-                    'sizex': 1,
-                    'sizey': 1,
-                    'opacity': 1,
-                    'xanchor': 'left',
-                    'yanchor': 'top'
-                }
-            ],
-            'xaxis': {
-                'showgrid': False,
-                'showticklabels': False,
-                'zeroline': False,
+        dict_of_users_tokens = {key: value for key, value in
+                                zip(df_tokenize[df_tokenize["airline"] == chosen_airline]["tweet_id"],
+                                    df_tokenize[df_tokenize["airline"] == chosen_airline]["tokenized_tweet"]
+                                    )
+                                }
+
+        text, concatenated_tokens = make_string_for_wordcloud(dict_of_users_tokens)
+        #del concatenated_tokens
+        #print(text[0:50])
+
+        try:
+            encoded_image = generate_wordcloud(text)
+            print("Worked For WORDCLOUD!!!", type(encoded_image))
+        except:
+            print("Failed")
+
+        return {
+            'data': [],
+            'layout': {
+                'images': [
+                    {
+                        'source': 'data:image/png;base64,{}'.format(encoded_image),
+                        'x': 0,
+                        'y': 1,
+                        'xref': 'paper',
+                        'yref': 'paper',
+                        'sizex': 1,
+                        'sizey': 1,
+                        'opacity': 1,
+                        'xanchor': 'left',
+                        'yanchor': 'top'
+                    }
+                ],
+                'xaxis': {
+                    'showgrid': False,
+                    'showticklabels': False,
+                    'zeroline': False,
+                },
+                'yaxis': {
+                    'showgrid': False,
+                    'showticklabels': False,
+                    'zeroline': False,
+                },
             },
-            'yaxis': {
-                'showgrid': False,
-                'showticklabels': False,
-                'zeroline': False,
-            },
-        },
-    }
+        }
+
+    else:
+        return {'data': []}
 
 
 if __name__ == '__main__':

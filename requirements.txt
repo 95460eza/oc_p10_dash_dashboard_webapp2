@@ -5,6 +5,7 @@ dash-bootstrap-components
 dash-mantine-components
 #streamlit
 nltk
+#nltk --upgrade
 wordcloud
 
 
