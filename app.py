@@ -10,7 +10,7 @@ import dash_bootstrap_components as dbc  # To define rows and columns on the pag
 import dash_mantine_components as dmc  # To define a grid on the page within which to insert dmc.Cols and define their width by assigning a number to the span property.
 import pandas as pd
 #import numpy as np
-#import plotly.express as px
+import plotly.express as px
 #import matplotlib.pyplot as plt
 import nltk
 # Download "stop words" list!!!
@@ -96,9 +96,269 @@ def generate_wordcloud(words_as_long_string):
     # Close the Matplotlib figure to prevent displaying it
     #plt.close()
     #plt.figure(figsize =(8,4))
-
     #encoded_image = base64.b64encode(img.tostring()).decode("utf-8")
     return encoded_image
+
+
+# Define the Web App Layout
+buttons_to_display_avgs = ['retweet_count', 'sentiment']
+buttons_to_display_proportions = ["negative","neutral","positive"]
+buttons_to_display_airlines = list(df_tokenize["airline"].unique())
+
+dash_app.layout = dbc.Container([  html.Br(),
+                                   dmc.Title('Proof of Concept Dashboard', color="blue", size="h1",  style={'text-align': 'center'}),
+                                   html.Br(),
+
+                                   html.Hr(),
+                                   html.P("Analyze Exploratoire:", style={'text-align': 'center', 'font-size': '30px'}),
+
+                                   html.P("Data table:", style={'font-size': '25px'}),
+                                   dmc.Grid([
+                                               dmc.Col( [ dash_table.DataTable( data=df.to_dict('records'), page_size=12, style_table={'overflowX': 'auto'} ) ],
+                                                        span=6
+                                                      )
+                                            ]),
+
+                                   html.P("Tweets Length - Select an Airline:",  style={'font-size': '25px'}),
+                                   dmc.Grid([
+                                               dmc.RadioGroup([dmc.Radio(i, value=i) for i in buttons_to_display_airlines],
+                                                              id='radio-button-for-airlines3',
+                                                              value='Southwest', size="lg"
+                                                              ),
+
+                                               dmc.Col([dcc.Graph(figure={}, id='graph-tweet-length-to-display')],
+                                                       span=6
+                                                       ),
+                                           ]),
+
+
+                                   html.P("Average Values - Select a Variable to Analyze:", style={'font-size': '25px'}),
+                                   dmc.Grid([
+                                               dmc.RadioGroup( [dmc.Radio(i, value=i) for i in buttons_to_display_avgs],
+                                                               id='radio-button-to-select-a-column',
+                                                               value='sentiment', size="lg"
+                                                             ),
+
+                                               dmc.Col( [dcc.Graph(figure={}, id='graph-average-to-display')],
+                                                        span=6
+                                                       ),
+                                            ]),
+
+                                   html.P("Proportions - Select a Sentiment to Analyze:", style={'font-size': '25px'}),
+                                   dmc.Grid([
+                                       dmc.RadioGroup([dmc.Radio(i, value=i) for i in buttons_to_display_proportions],
+                                                      id='radio-button-to-select-a-proportion',
+                                                      value='negative', size="lg"
+                                                      ),
+
+                                       dmc.Col([dcc.Graph(figure={}, id='graph-proportions-to-display')],
+                                               span=6
+                                               ),
+                                          ]),
+
+                                   html.P("Words Frequency - Select an Airline:", style={'font-size': '25px'}),
+                                   dmc.Grid([
+                                       dmc.RadioGroup([dmc.Radio(i, value=i) for i in buttons_to_display_airlines],
+                                                      id='radio-button-for-airlines',
+                                                      value='Southwest', size="lg"
+                                                      ),
+
+                                       dmc.Col([dcc.Graph(figure={}, id='graph-words-frequency')],
+                                               span=6
+                                               ),
+                                   ]),
+
+
+                                   html.P("Wordcloud - Select an Airline:", style={'font-size': '25px'}),
+                                   dmc.Grid([
+                                               dmc.RadioGroup([dmc.Radio(i, value=i) for i in buttons_to_display_airlines],
+                                                              id='radio-button-for-airlines2',
+                                                              value='Southwest', size="lg"
+                                                              ),
+
+                                               dmc.Col([ dcc.Graph(figure={'data': [], 'layout': {}}, id='graph-wordcloud')],
+                                                         span=6
+                                                       ),
+                                                  ]),
+
+
+
+                                   ], fluid=True
+
+                            )
+
+
+
+# SETUP CALLBACK: It Enables the use of control components for building the interaction
+@callback(
+    # By CONVENTION you MUST provide all Outputs first. "component_property" are the parameters whose values the interaction will change
+    Output(component_id='graph-tweet-length-to-display', component_property='figure'),
+    Input(component_id ='radio-button-for-airlines3', component_property='value'),
+)
+def update_tweet_length_graph(chosen_airline):
+
+    if chosen_airline:
+
+        fig = px.histogram(df[df["airline"] == chosen_airline], x="tweet_length",
+                           text_auto='.0%', histnorm='probability',
+                           title="Distribution of Tweets Length by Airline",
+                           )
+        fig.update_traces(textposition="inside")
+        return fig
+
+    else:
+        return {'data': []}
+
+
+@callback(
+    # By CONVENTION you MUST provide all Outputs first. "component_property" are the parameters whose values the interaction will change
+    Output(component_id='graph-average-to-display', component_property='figure'),
+    Input(component_id='radio-button-to-select-a-column', component_property='value'),
+)
+def update_avge_graph(col_chosen):
+
+    if col_chosen:
+
+        fig = px.histogram(df, x='airline', y=col_chosen, histfunc='avg', title='Average Values by Airline')
+        for category in df['airline'].unique():
+            avg_value = df[df['airline'] == category][col_chosen].mean()
+            fig.add_annotation(
+                #text=f'Avg: {avg_value:.2f}',
+                text=f'{avg_value:.2f}',
+                x=category,
+                y=avg_value,
+                showarrow=False,
+                font=dict(size=12),
+                yshift=10
+            )
+        return fig
+
+    else:
+        return {'data': []}
+
+@callback(
+    # By CONVENTION you MUST provide all Outputs first. "component_property" are the parameters whose values the interaction will change
+    Output(component_id='graph-proportions-to-display', component_property='figure'),
+    Input(component_id='radio-button-to-select-a-proportion', component_property='value'),
+)
+def update_poportion_graph(col_chosen):
+
+    if col_chosen:
+
+        fig = px.bar(
+        grouped[grouped["airline_sentiment"] == col_chosen],
+        x="airline",
+        y="proportion",
+        text="proportion",
+        title="Share of Selected Sentiment Out Of ALL Expressed for that Airline",
+        )
+
+        fig.update_traces(texttemplate="%{text:.2%}", textposition="inside")
+        fig.update_layout(
+            xaxis_title="Airline", yaxis_title="% Represented by Selected Sentiment"
+        )
+        return fig
+
+    else:
+        return {'data': []}
+
+
+@callback(
+    # By CONVENTION you MUST provide all Outputs first. "component_property" are the parameters whose values the interaction will change
+    Output(component_id='graph-words-frequency', component_property='figure'),
+    Input(component_id='radio-button-for-airlines', component_property='value'),
+)
+def update_words_frequency_graph(chosen_airline):
+
+    if chosen_airline:
+
+        dict_of_users_tokens = {key: value for key, value in
+                                zip(df_tokenize[df_tokenize["airline"] == chosen_airline]["tweet_id"],
+                                    df_tokenize[df_tokenize["airline"] == chosen_airline]["tokenized_tweet"]
+                                    )
+                                }
+
+        text, concatenated_tokens = make_string_for_wordcloud(dict_of_users_tokens)
+        del text
+
+        words_freq = pd.DataFrame(pd.Series(concatenated_tokens).value_counts()).reset_index()
+        words_freq.columns = ["word", "count"]
+        words_freq = words_freq.drop([0, 1])
+
+        fig = px.bar(
+            words_freq.head(30),
+            x="word",
+            y="count",
+            text="count",
+            title="Top Words frequency in Tweets for Airline",
+        )
+
+        fig.update_traces(texttemplate="%{text:.0f}", textposition="outside")
+        fig.update_layout(
+            xaxis_title="Words in Tweets", yaxis_title="Word Frequency"
+        )
+        return fig
+
+    else:
+        return {'data': []}
+
+@callback(
+    # By CONVENTION you MUST provide all Outputs first. "component_property" are the parameters whose values the interaction will change
+    Output(component_id='graph-wordcloud', component_property='figure'),
+    Input(component_id='radio-button-for-airlines2', component_property='value'),
+)
+def update_wordcloud(chosen_airline):
+
+    if chosen_airline:
+
+        dict_of_users_tokens = {key: value for key, value in
+                                zip(df_tokenize[df_tokenize["airline"] == chosen_airline]["tweet_id"],
+                                    df_tokenize[df_tokenize["airline"] == chosen_airline]["tokenized_tweet"]
+                                    )
+                                }
+
+        text, concatenated_tokens = make_string_for_wordcloud(dict_of_users_tokens)
+        del concatenated_tokens
+        #print(text[0:50])
+
+        try:
+            encoded_image = generate_wordcloud(text)
+            #print("Worked For WORDCLOUD!!!", type(encoded_image))
+        except:
+            print("Failed")
+
+        return {
+            'data': [],
+            'layout': {
+                'images': [
+                    {
+                        'source': 'data:image/png;base64,{}'.format(encoded_image),
+                        'x': 0,
+                        'y': 1,
+                        'xref': 'paper',
+                        'yref': 'paper',
+                        'sizex': 1,
+                        'sizey': 1,
+                        'opacity': 1,
+                        'xanchor': 'left',
+                        'yanchor': 'top'
+                    }
+                ],
+                'xaxis': {
+                    'showgrid': False,
+                    'showticklabels': False,
+                    'zeroline': False,
+                },
+                'yaxis': {
+                    'showgrid': False,
+                    'showticklabels': False,
+                    'zeroline': False,
+                },
+            },
+        }
+
+    else:
+        return {'data': []}
 
 
 

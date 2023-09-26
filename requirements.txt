@@ -1,7 +1,7 @@
 pandas
 #scikit-learn
 #numpy
-#plotly
+plotly
 dash
 dash-bootstrap-components
 dash-mantine-components
