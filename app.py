@@ -112,10 +112,11 @@ model_sentiment140_to_load = os.path.join(
     os.getcwd(), "dash_trained_saved_models/pipe_sentiment140_tweets.pkl"
 )
 pipe_sentiment140_tweets = joblib.load(model_sentiment140_to_load)
-@labeling_function() 
+@labeling_function()
 def sklearn_nb_clf(text):
     # Decision of Classifier 1: SENTIMENT140
-    return pipe_sentiment140_tweets.predict(text)[0]
+    #return pipe_sentiment140_tweets.predict(text)[0]
+    return pipe_sentiment140_tweets.predict(text)
 
 
 
