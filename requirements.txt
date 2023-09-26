@@ -1,15 +1,16 @@
-pandas
-#scikit-learn
-#numpy
-plotly
 dash
 dash-bootstrap-components
 dash-mantine-components
+pandas
+#scikit-learn
+#numpy
 #streamlit
 nltk
 #nltk --upgrade
+plotly
 wordcloud
+joblib
+snorkel
 #textblob
-#snorkel
-#joblib
+
 
