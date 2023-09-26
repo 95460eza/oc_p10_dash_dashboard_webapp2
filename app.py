@@ -2,9 +2,9 @@
 
 #import warnings
 import os
-#import io
-#import random
-#import base64
+import io
+import random
+import base64
 from dash import Dash, html, dash_table, dcc, callback, Output, Input
 import dash_bootstrap_components as dbc  # To define rows and columns on the page
 import dash_mantine_components as dmc  # To define a grid on the page within which to insert dmc.Cols and define their width by assigning a number to the span property.
@@ -20,7 +20,7 @@ from nltk.tokenize import word_tokenize
 # Download punctuation remover!
 nltk.download("punkt")
 import re
-#from wordcloud import WordCloud
+from wordcloud import WordCloud
 
 
 # Creates the DASH INTERACTIVE web app OBJECT (content is interactive and will be seen in an browser)
@@ -75,6 +75,30 @@ def make_string_for_wordcloud(input_dict):
     final_string = ' '.join(concat_tokens)
     return final_string, concat_tokens
 
+# Make Wordcloud
+def color_words(*args, **kwargs):
+    return "rgb(0, 100, {})".format(random.randint(100, 255))
+
+def generate_wordcloud(words_as_long_string):
+
+    #warnings.filterwarnings("ignore")
+    #wordcloud = WordCloud(background_color='black', width=800, height=400).generate(words_as_long_string)
+    wordcloud2 = WordCloud(background_color='black').generate(words_as_long_string)
+
+    img_io = io.BytesIO()
+    wordcloud2.to_image().save(img_io, format='PNG')
+    img_io.seek(0)
+    encoded_image = base64.b64encode(img_io.read()).decode("utf-8")
+
+    #plt.imshow(wordcloud, interpolation='bilinear')
+    #img =plt.imshow(wordcloud.recolor(color_func=color_words), interpolation="bilinear")
+    #plt.axis("off")
+    # Close the Matplotlib figure to prevent displaying it
+    #plt.close()
+    #plt.figure(figsize =(8,4))
+
+    #encoded_image = base64.b64encode(img.tostring()).decode("utf-8")
+    return encoded_image
 
 
 

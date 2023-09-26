@@ -8,7 +8,7 @@ dash-mantine-components
 #streamlit
 nltk
 #nltk --upgrade
-#wordcloud
+wordcloud
 #textblob
 #snorkel
 #joblib
