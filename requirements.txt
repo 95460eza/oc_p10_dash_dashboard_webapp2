@@ -10,8 +10,8 @@ plotly
 wordcloud
 scikit-learn
 joblib
-pip3 install --upgrade setuptools
-snorkel
+setuptools
+#snorkel
 #snorkel==0.9.9
 #textblob
 
