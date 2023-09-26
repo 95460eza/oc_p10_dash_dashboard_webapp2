@@ -2,15 +2,15 @@ dash
 dash-bootstrap-components
 dash-mantine-components
 pandas
-#scikit-learn
 #numpy
 #streamlit
 nltk
 #nltk --upgrade
 plotly
 wordcloud
+scikit-learn
 joblib
-snorkel
+#snorkel
 #textblob
 
 
