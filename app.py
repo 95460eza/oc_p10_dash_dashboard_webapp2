@@ -36,8 +36,8 @@ app = dash_app.server
 
 
 # Read in Data
-#file_to_load = os.path.join( os.getcwd(), "dash_texts_data/df_airline_tweets.csv")
-#df = pd.read_csv(file_to_load)
+file_to_load = os.path.join( os.getcwd(), "dash_texts_data/df_airline_tweets.csv")
+df = pd.read_csv(file_to_load)
 # Convert the colunm from a pandas SERIES object to a CATEGORY object
 #df["airline_sentiment"] = pd.Categorical(df["airline_sentiment"])
 # Create a new NUMERIC column by converting category values to integers
