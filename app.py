@@ -2,7 +2,8 @@
 
 #import warnings
 import os
-import io
+import io1
+#import csv
 import random
 import base64
 from dash import Dash, html, dash_table, dcc, callback, Output, Input
@@ -183,6 +184,17 @@ def plot_data(scores, lm_scores):
 
     fig.update_layout(xaxis_title="Batch Number", yaxis_title="Accuracy")
     return fig
+
+
+file_to_load_scores_dict = os.path.join( os.getcwd(), "dash_texts_data/df_optuna_scores_dict.csv")
+df_optuna_scores_dict = pd.read_csv(file_to_load_scores_dict)
+optuna_scores_dict = df_optuna_scores_dict.to_dict()["Value"]
+file_to_load_lm_scores_dict = os.path.join( os.getcwd(), "dash_texts_data/df_optuna_lm_scores_dict.csv")
+df_optuna_lm_scores_dict = pd.read_csv(file_to_load_lm_scores_dict)
+optuna_lm_scores_dict = df_optuna_lm_scores_dict.to_dict()["Value"]
+
+
+
 
 
 
