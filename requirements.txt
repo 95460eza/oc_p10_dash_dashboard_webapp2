@@ -11,7 +11,7 @@ wordcloud
 scikit-learn
 joblib
 setuptools
-snorkel
+Snorkel
 #snorkel==0.9.9
 #textblob
 
