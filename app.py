@@ -12,13 +12,13 @@ import pandas as pd
 #import numpy as np
 #import plotly.express as px
 #import matplotlib.pyplot as plt
-#import nltk
-# Download "stop words" list!
-#nltk.download("stopwords")
-#from nltk.corpus import stopwords
-#from nltk.tokenize import word_tokenize
+import nltk
+# Download "stop words" list!!!
+nltk.download("stopwords")
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 # Download punctuation remover!
-#nltk.download("punkt")
+nltk.download("punkt")
 #import re
 #from wordcloud import WordCloud
 
@@ -62,6 +62,18 @@ df_tokenize = df.copy()
 df_tokenize["tokenized_tweet"] = df["text"].apply(lambda x: word_tokenize(re.sub(r"[^\w\s]", "", x)))
 df_tokenize = df_tokenize[["tweet_id", "airline", "tokenized_tweet"]]
 
+
+# Make strings for Words Cloud
+def make_string_for_wordcloud(input_dict):
+    stop_words = set(stopwords.words("english"))
+    concat_tokens = []
+
+    for token_list in list(input_dict.values()):
+        filtered_tokens_list = [word for word in token_list if word.lower() not in stop_words]
+        concat_tokens = concat_tokens + filtered_tokens_list
+
+    final_string = ' '.join(concat_tokens)
+    return final_string, concat_tokens
 
 
 if __name__ == '__main__':
