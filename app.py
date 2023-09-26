@@ -39,12 +39,28 @@ app = dash_app.server
 file_to_load = os.path.join( os.getcwd(), "dash_texts_data/df_airline_tweets.csv")
 df = pd.read_csv(file_to_load)
 # Convert the colunm from a pandas SERIES object to a CATEGORY object
-#df["airline_sentiment"] = pd.Categorical(df["airline_sentiment"])
+df["airline_sentiment"] = pd.Categorical(df["airline_sentiment"])
 # Create a new NUMERIC column by converting category values to integers
-#df["sentiment"] = df["airline_sentiment"].cat.codes
-#df["tweet_length"] = df["text"].apply(lambda x: len(x))
-#df = df.sort_values(by=["tweet_created"])
+df["sentiment"] = df["airline_sentiment"].cat.codes
+df["tweet_length"] = df["text"].apply(lambda x: len(x))
+df = df.sort_values(by=["tweet_created"])
 
+# Sentiment Category Proportion by Airline
+grouped = (
+    df.groupby(["airline", "airline_sentiment"])[
+        "airline_sentiment"
+    ].count()
+    / df.groupby(["airline"])["airline_sentiment"].count()
+)
+
+grouped = pd.DataFrame(grouped)
+grouped.columns = ["proportion"]
+grouped = grouped.reset_index()
+
+df_tokenize = df.copy()
+
+df_tokenize["tokenized_tweet"] = df["text"].apply(lambda x: word_tokenize(re.sub(r"[^\w\s]", "", x)))
+df_tokenize = df_tokenize[["tweet_id", "airline", "tokenized_tweet"]]
 
 
 
