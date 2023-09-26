@@ -8,7 +8,7 @@
 from dash import Dash, html, dash_table, dcc, callback, Output, Input
 import dash_bootstrap_components as dbc  # To define rows and columns on the page
 import dash_mantine_components as dmc  # To define a grid on the page within which to insert dmc.Cols and define their width by assigning a number to the span property.
-import pandas as pd
+#import pandas as pd
 #import numpy as np
 #import plotly.express as px
 #import matplotlib.pyplot as plt
