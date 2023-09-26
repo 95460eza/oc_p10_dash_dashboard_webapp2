@@ -10,7 +10,7 @@ plotly
 wordcloud
 scikit-learn
 joblib
-#snorkel
+snorkel
 #textblob
 
 

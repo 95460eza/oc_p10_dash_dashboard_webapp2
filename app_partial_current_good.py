@@ -21,7 +21,14 @@ from nltk.tokenize import word_tokenize
 nltk.download("punkt")
 import re
 from wordcloud import WordCloud
-
+import joblib
+import sklearn
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score
+#import snorkel
+#from snorkel.labeling import labeling_function
 
 # Creates the DASH INTERACTIVE web app OBJECT (content is interactive and will be seen in an browser)
 # Incorporate styling Dash Bootstrap Components
@@ -98,6 +105,19 @@ def generate_wordcloud(words_as_long_string):
     #plt.figure(figsize =(8,4))
     #encoded_image = base64.b64encode(img.tostring()).decode("utf-8")
     return encoded_image
+
+
+# Labeling Functions for prediction
+model_sentiment140_to_load = os.path.join(
+    os.getcwd(), "dash_trained_saved_models/pipe_sentiment140_tweets.pkl"
+)
+pipe_sentiment140_tweets = joblib.load(model_sentiment140_to_load)
+#@labeling_function()
+#def sklearn_nb_clf(text):
+    # Decision of Classifier 1: SENTIMENT140
+#    return pipe_sentiment140_tweets.predict(text)[0]
+
+
 
 
 # Define the Web App Layout
