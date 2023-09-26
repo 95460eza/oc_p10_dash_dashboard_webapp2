@@ -21,12 +21,6 @@ from nltk.tokenize import word_tokenize
 nltk.download("punkt")
 import re
 from wordcloud import WordCloud
-import textblob
-import snorkel
-from snorkel.labeling import labeling_function, PandasLFApplier
-import joblib
-
-#from online_label_model import OnlineLabelModel
 
 
 # Creates the DASH INTERACTIVE web app OBJECT (content is interactive and will be seen in an browser)
