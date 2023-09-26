@@ -284,14 +284,17 @@ dash_app.layout = dbc.Container([  html.Br(),
                                    html.P("Results:", style={'text-align': 'center', 'font-size': '30px'}),
 
                                    html.Hr(),
-                                   html.P("Accuracy Comparison:", style={'font-size': '25px'}),
+                                   html.P("Accuracy Graphs:", style={'font-size': '25px'}),
                                    dmc.Grid([
-                                       dmc.Col([dcc.Graph(figure=accuracy_graph())],
-                                               span=6
-                                               ),
-                                   ]),
+                                               dmc.Col([dcc.Graph(figure=accuracy_graph())],
+                                                        span=6
+                                                        ),
 
+                                                dmc.Col([dcc.Graph(figure=plot_data(scores=optuna_scores_dict, lm_scores=optuna_lm_scores_dict))],
+                                                         span=6
+                                                        )
 
+                                              ]),
 
                                    ], fluid=True
 
