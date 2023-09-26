@@ -156,7 +156,7 @@ def textblob_pa_lf(text):
     # when (subjectivity <= 0.5) OR when (subjectivity > 0.5 but polarity <= -0.5)
     return 0
 
-lfs = [textblob_pa_lf, sklearn_nb_imdb_lf, sklearn_nb_clf]
+
 
 # Function to Apply EXISTING Classifiers
 def sequentially_apply_all_3_Classifiers(df_with_text, list_of_labeling_functions):
@@ -375,38 +375,6 @@ dash_app.layout = dbc.Container([  html.Br(),
                                    html.Hr(),
                                    html.P("New Technique Results Comparisons:", style={'text-align': 'center', 'font-size': '30px'}),
 
-                                   html.Hr(),
-                                   html.P("Accuracy Graphs:", style={'font-size': '25px'}),
-                                   dmc.Grid([
-                                               dmc.Col([dcc.Graph(figure=accuracy_graph())],
-                                                        span=6
-                                                        ),
-
-                                                dmc.Col([dcc.Graph(figure=plot_data(scores=optuna_scores_dict, lm_scores=optuna_lm_scores_dict))],
-                                                         span=6
-                                                        )
-
-                                              ]),
-                                   
-                                   html.Hr(),
-                                   html.P("Tweet Prediction:", style={'font-size': '25px'}),
-                                   dmc.Grid([
-                                                dmc.Col([dcc.Input(type='text', placeholder='Enter a Tweet here', size='lg',
-                                                          value='', id='field-to-enter-tweet')],
-                                                         span=4
-                                                        ),
-
-                                               # parameter "children" here is implicit
-                                               dmc.Col([html.Div(id='prediction-of-tweet-sentiment', style={'font-family': 'Arial', 'font-size': '25px'})],
-                                               span=6
-                                                        ),
-                                             ]),
-
-                                   html.Br(),
-                                   html.Br(),
-                                   html.Br(),
-                                   html.Br(),
-
                                    ], fluid=True
 
                             )
@@ -585,24 +553,6 @@ def update_wordcloud(chosen_airline):
         return {'data': []}
 
 
-@callback(
-    # dash.dependencies.Output('text-output', 'children'),
-    # [dash.dependencies.Input('text-input', 'value')]
-    Output(component_id='prediction-of-tweet-sentiment', component_property='children'),
-    Input(component_id='field-to-enter-tweet', component_property='value'),
-
-)
-def update_tweet_prediction(value):
-
-    if value:
-        tweet_to_predict = pd.Series(value)
-        tweet_sources_preds = sequentially_apply_all_3_Classifiers(tweet_to_predict, lfs)
-        new_technique_pred = olm_fitted.predict(tweet_sources_preds)[0]
-
-        return f'The New Technique Sentiment Prediction of {value} is: {new_technique_pred} (0= Negatif, 1= Neutral, 2= Positive) '
-
-    else:
-        return f'No Tweet Entered!'
 
 
 
