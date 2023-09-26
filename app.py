@@ -19,7 +19,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 # Download punctuation remover!
 nltk.download("punkt")
-#import re
+import re
 #from wordcloud import WordCloud
 
 
@@ -74,6 +74,11 @@ def make_string_for_wordcloud(input_dict):
 
     final_string = ' '.join(concat_tokens)
     return final_string, concat_tokens
+
+
+
+
+
 
 
 if __name__ == '__main__':
