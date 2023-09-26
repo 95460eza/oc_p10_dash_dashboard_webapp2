@@ -2,7 +2,7 @@ dash
 dash-bootstrap-components
 dash-mantine-components
 pandas
-#numpy
+numpy
 #streamlit
 nltk
 #nltk --upgrade
