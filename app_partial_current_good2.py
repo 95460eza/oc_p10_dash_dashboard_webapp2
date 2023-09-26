@@ -9,7 +9,7 @@ from dash import Dash, html, dash_table, dcc, callback, Output, Input
 import dash_bootstrap_components as dbc  # To define rows and columns on the page
 import dash_mantine_components as dmc  # To define a grid on the page within which to insert dmc.Cols and define their width by assigning a number to the span property.
 import pandas as pd
-import numpy as np
+#import numpy as np
 import plotly.express as px
 #import matplotlib.pyplot as plt
 import nltk
@@ -115,46 +115,7 @@ pipe_sentiment140_tweets = joblib.load(model_sentiment140_to_load)
 #@labeling_function()
 #def sklearn_nb_clf(text):
     # Decision of Classifier 1: SENTIMENT140
-    #return pipe_sentiment140_tweets.predict(text)[0]
-#    return text
-
-
-def accuracy_graph():
-
-    alphas = [
-            "Pattern Analyzer",
-            "Transfer Learning from 'IMDB data'",
-            "Combining the 3 Classifiers",
-            "Transfer Learning from 'Sentiments140 data",
-            "PER-BATCH Model",
-        ]
-
-    textblob_pa_lf_acc = 0.2901639344262295
-    sklearn_nb_imdb_clf_acc = 0.5549863387978142
-    lm_acc = 0.5638661202185792
-    sklearn_nb_clf_acc = 0.6489754098360656
-    olm_acc = 0.6827510917030567
-
-    performance = [
-            textblob_pa_lf_acc,
-            sklearn_nb_imdb_clf_acc,
-            lm_acc,
-            sklearn_nb_clf_acc,
-            olm_acc,
-        ]
-
-    fig = px.bar(
-            x=performance,
-            y=alphas,
-            text=performance,
-            title="Average Accuracy of Existing Methods Vs Per-Batch Method ",
-        )
-    fig.update_traces(texttemplate="%{text:.2%}", textposition="inside")
-    fig.update_layout(
-            xaxis_title="Prediction Accuracy on Test Data", yaxis_title="Labeling Method"
-        )
-
-    return fig
+#    return pipe_sentiment140_tweets.predict(text)[0]
 
 
 
