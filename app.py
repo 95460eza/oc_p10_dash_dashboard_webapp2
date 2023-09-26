@@ -27,7 +27,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
-import snorkel
+#import snorkel
 #from snorkel.labeling import labeling_function
 
 # Creates the DASH INTERACTIVE web app OBJECT (content is interactive and will be seen in an browser)
