@@ -244,7 +244,13 @@ dash_app.layout = dbc.Container([  html.Br(),
                                    html.Hr(),
                                    html.P("Results:", style={'text-align': 'center', 'font-size': '30px'}),
 
-
+                                   html.Hr(),
+                                   html.P("Accuracy Comparison:", style={'font-size': '25px'}),
+                                   dmc.Grid([
+                                       dmc.Col([dcc.Graph(figure=accuracy_graph())],
+                                               span=6
+                                               ),
+                                   ]),
 
 
 
