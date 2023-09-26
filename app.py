@@ -156,6 +156,33 @@ def accuracy_graph():
 
     return fig
 
+def plot_data(scores, lm_scores):
+    lists = sorted(scores.items())
+    lists_lm = sorted(lm_scores.items())
+    x, y = zip(*lists)
+    x_lm, y_lm = zip(*lists_lm)
+    fig = go.Figure()
+    fig.add_traces(
+        go.Scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            line=dict(color="red"),
+            name="Accuracy of PER Batches Model",
+        )
+    )
+    fig.add_traces(
+        go.Scatter(
+            x=x_lm,
+            y=y_lm,
+            mode="lines",
+            line=dict(color="black"),
+            name="Accuracy of Usual Snorkel Labeling Model",
+        )
+    )
+
+    fig.update_layout(xaxis_title="Batch Number", yaxis_title="Accuracy")
+    return fig
 
 
 
