@@ -11,6 +11,7 @@ import dash_mantine_components as dmc  # To define a grid on the page within whi
 import pandas as pd
 #import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import nltk
 # Download "stop words" list!
@@ -24,9 +25,15 @@ from wordcloud import WordCloud
 import textblob
 import snorkel
 from snorkel.labeling import labeling_function, PandasLFApplier
+from snorkel.labeling.model.label_model import LabelModel
 import joblib
 
+# New Method!!
 from online_label_model import OnlineLabelModel
+from sklearn.metrics import accuracy_score
+
+SEED = 0
+
 
 
 # Creates the DASH INTERACTIVE web app OBJECT (content is interactive and will be seen in an browser)
@@ -50,8 +57,6 @@ df["airline_sentiment"] = pd.Categorical(df["airline_sentiment"])
 df["sentiment"] = df["airline_sentiment"].cat.codes
 df["tweet_length"] = df["text"].apply(lambda x: len(x))
 df = df.sort_values(by=["tweet_created"])
-
-
 #columns_to_keep = ['airline', 'retweet_count', 'sentiment']
 
 # Sentiment Category Proportion by Airline
@@ -111,102 +116,6 @@ def generate_wordcloud(words_as_long_string):
     #encoded_image = base64.b64encode(img.tostring()).decode("utf-8")
     return encoded_image
     
-
-# Labeling Functions for prediction
-model_sentiment140_to_load = os.path.join(
-    os.getcwd(), "dash_trained_saved_models/pipe_sentiment140_tweets.pkl"
-)
-pipe_sentiment140_tweets = joblib.load(model_sentiment140_to_load)
-@labeling_function()
-def sklearn_nb_clf(text):
-    # Decision of Classifier 1: SENTIMENT140
-    return pipe_sentiment140_tweets.predict(text)[0]
-
-
-model_imdb_to_load = os.path.join(
-    os.getcwd(), "dash_trained_saved_models/pipe_imdb_reviews.pkl"
-)
-pipe_imdb_reviews = joblib.load(model_imdb_to_load)
-@labeling_function()
-def sklearn_nb_imdb_lf(text):
-    # Decision of Classifier 2: IMDB REVIEWS
-    return pipe_imdb_reviews.predict(text)[0]
-
-
-textblob_pa_clf = textblob.Blobber(analyzer=textblob.sentiments.PatternAnalyzer())
-@labeling_function()
-def textblob_pa_lf(text):
-    # Polarity of Classifier 3: RULES-BASED CLASSIFIER
-    # polarity, subjectivity = textblob_pa_clf(text["text"]).sentiment
-    polarity, subjectivity = textblob_pa_clf(str(text)).sentiment
-
-    if polarity > 0.33:
-        # if polarity > 0.5 and subjectivity > 0.5:
-        return 2
-
-    elif polarity > -0.33:
-        # elif -0.5 < polarity < 0.5 and subjectivity > 0.5:
-        return 1
-
-    # when (subjectivity <= 0.5) OR when (subjectivity > 0.5 but polarity <= -0.5)
-    return 0
-
-
-# Function to Apply EXISTING Classifiers
-def sequentially_apply_all_3_Classifiers(df_with_text, list_of_labeling_functions):
-
-    applier = PandasLFApplier(list_of_labeling_functions)
-
-    List_predicted_labels = applier.apply(df_with_text.to_frame(), progress_bar=False)
-    return List_predicted_labels
-
-airline_text = df["text"]
-lfs = [textblob_pa_lf, sklearn_nb_imdb_lf, sklearn_nb_clf]
-#L_train = sequentially_apply_all_3_Classifiers(airline_text, lfs)
-y_true = df["sentiment"]
-
-
-# Fit New technique Model
-# Function uses also as INPUTS L_train and y_true
-
-
-def accuracy_graph():
-
-    alphas = [
-            "Pattern Analyzer",
-            "Transfer Learning from 'IMDB data'",
-            "Combining the 3 Classifiers",
-            "Transfer Learning from 'Sentiments140 data",
-            "PER-BATCH Model",
-        ]
-
-    textblob_pa_lf_acc = 0.2901639344262295
-    sklearn_nb_imdb_clf_acc = 0.5549863387978142
-    lm_acc = 0.5638661202185792
-    sklearn_nb_clf_acc = 0.6489754098360656
-    olm_acc = 0.6827510917030567
-
-    performance = [
-            textblob_pa_lf_acc,
-            sklearn_nb_imdb_clf_acc,
-            lm_acc,
-            sklearn_nb_clf_acc,
-            olm_acc,
-        ]
-
-    fig = px.bar(
-            x=performance,
-            y=alphas,
-            text=performance,
-            title="Average Accuracy of Existing Methods Vs Per-Batch Method ",
-        )
-    fig.update_traces(texttemplate="%{text:.2%}", textposition="inside")
-    fig.update_layout(
-            xaxis_title="Prediction Accuracy on Test Data", yaxis_title="Labeling Method"
-        )
-
-    return fig
-
 
 
 # Define the Web App Layout
@@ -288,35 +197,11 @@ dash_app.layout = dbc.Container([  html.Br(),
                                                dmc.Col([ dcc.Graph(figure={'data': [], 'layout': {}}, id='graph-wordcloud')],
                                                          span=6
                                                        ),
-                                                  ]),
+                                                ]),
 
                                    html.Br(),
                                    html.Hr(),
-                                   html.P("Results:", style={'text-align': 'center', 'font-size': '30px'}),
-
-                                   html.P("Accuracy:", style={'font-size': '25px'}),
-                                   dmc.Grid([
-                                              dmc.Col([dcc.Input(type='text', placeholder='Enter a Tweet here', size='lg',
-                                                          value='', id='field-to-enter-tweet')],
-
-                                               span=4
-                                               ),
-
-                                       dmc.Col([dcc.Graph(figure={'data': [], 'layout': {}},
-                                                          id='graph-prediction-of-tweet-sentiment')],
-                                               span=6
-                                               ),
-                                           ]),
-
-
-                                   html.Hr(),
-                                   html.P("Accuracy Comparison:", style={'font-size': '25px'}),
-                                   dmc.Grid([
-                                               dmc.Col([dcc.Graph(figure=accuracy_graph())],
-                                               span=6
-                                                      ),
-                                              ]),
-
+                                   html.P("New Technique Results Comparisons:", style={'text-align': 'center', 'font-size': '30px'}),
 
                                    ], fluid=True
 
@@ -496,55 +381,6 @@ def update_wordcloud(chosen_airline):
         return {'data': []}
 
 
-@callback(
-    # dash.dependencies.Output('text-output', 'children'),
-    # [dash.dependencies.Input('text-input', 'value')]
-    Output(component_id='graph-prediction-of-tweet-sentiment', component_property='figure'),
-    Input(component_id='field-to-enter-tweet', component_property='value'),
-
-)
-def update_prediction_graph(value):
-    if value:
-
-        tweet_to_predict = pd.Series(value)
-
-        alphas = [
-            "Pattern Analyzer",
-            "Transfer Learning from 'IMDB data'",
-            "Combining the 3 Classifiers",
-            "Transfer Learning from 'Sentiments140 data",
-            "PER-BATCH Model",
-        ]
-
-        textblob_pa_lf_acc = 0.2901639344262295
-        sklearn_nb_imdb_clf_acc = 0.5549863387978142
-        lm_acc = 0.5638661202185792
-        sklearn_nb_clf_acc = 0.6489754098360656
-        olm_acc = 0.6827510917030567
-
-        performance = [
-            textblob_pa_lf_acc,
-            sklearn_nb_imdb_clf_acc,
-            lm_acc,
-            sklearn_nb_clf_acc,
-            olm_acc,
-        ]
-
-        fig = px.bar(
-            x=performance,
-            y=alphas,
-            text=performance,
-            title="Average Accuracy of Existing Methods Vs Per-Batch Method ",
-        )
-        fig.update_traces(texttemplate="%{text:.2%}", textposition="inside")
-        fig.update_layout(
-            xaxis_title="Prediction Accuracy on Test Data", yaxis_title="Labeling Method"
-        )
-
-        return fig
-
-    else:
-        return {'data': []}
 
 
 
