@@ -116,7 +116,7 @@ pipe_sentiment140_tweets = joblib.load(model_sentiment140_to_load)
 def sklearn_nb_clf(text):
     # Decision of Classifier 1: SENTIMENT140
     #return pipe_sentiment140_tweets.predict(text)[0]
-    return pipe_sentiment140_tweets.predict(text)
+    return text
 
 
 
