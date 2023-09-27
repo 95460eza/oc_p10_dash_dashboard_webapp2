@@ -1,9 +1,8 @@
 
 
-#import warnings
+import warnings
 import os
 import io
-#import csv
 import random
 import base64
 from dash import Dash, html, dash_table, dcc, callback, Output, Input
@@ -13,9 +12,9 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import nltk
-# Download "stop words" list!!!
+# Download "stop words" list!
 nltk.download("stopwords")
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -23,14 +22,19 @@ from nltk.tokenize import word_tokenize
 nltk.download("punkt")
 import re
 from wordcloud import WordCloud
+import textblob
+import snorkel
+from snorkel.labeling import labeling_function, PandasLFApplier
+from snorkel.labeling.model.label_model import LabelModel
 import joblib
-import sklearn
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.pipeline import Pipeline
+
+# New Method!!
+from online_label_model import OnlineLabelModel
 from sklearn.metrics import accuracy_score
-#import snorkel
-#from snorkel.labeling import labeling_function
+
+SEED = 0
+
+
 
 # Creates the DASH INTERACTIVE web app OBJECT (content is interactive and will be seen in an browser)
 # Incorporate styling Dash Bootstrap Components
@@ -53,6 +57,7 @@ df["airline_sentiment"] = pd.Categorical(df["airline_sentiment"])
 df["sentiment"] = df["airline_sentiment"].cat.codes
 df["tweet_length"] = df["text"].apply(lambda x: len(x))
 df = df.sort_values(by=["tweet_created"])
+#columns_to_keep = ['airline', 'retweet_count', 'sentiment']
 
 # Sentiment Category Proportion by Airline
 grouped = (
@@ -71,18 +76,20 @@ df_tokenize = df.copy()
 df_tokenize["tokenized_tweet"] = df["text"].apply(lambda x: word_tokenize(re.sub(r"[^\w\s]", "", x)))
 df_tokenize = df_tokenize[["tweet_id", "airline", "tokenized_tweet"]]
 
-
 # Make strings for Words Cloud
 def make_string_for_wordcloud(input_dict):
+    
     stop_words = set(stopwords.words("english"))
     concat_tokens = []
 
     for token_list in list(input_dict.values()):
+
         filtered_tokens_list = [word for word in token_list if word.lower() not in stop_words]
         concat_tokens = concat_tokens + filtered_tokens_list
 
     final_string = ' '.join(concat_tokens)
     return final_string, concat_tokens
+
 
 # Make Wordcloud
 def color_words(*args, **kwargs):
@@ -92,10 +99,10 @@ def generate_wordcloud(words_as_long_string):
 
     #warnings.filterwarnings("ignore")
     #wordcloud = WordCloud(background_color='black', width=800, height=400).generate(words_as_long_string)
-    wordcloud2 = WordCloud(background_color='black').generate(words_as_long_string)
+    wordcloud = WordCloud(background_color='black').generate(words_as_long_string)
 
     img_io = io.BytesIO()
-    wordcloud2.to_image().save(img_io, format='PNG')
+    wordcloud.to_image().save(img_io, format='PNG')
     img_io.seek(0)
     encoded_image = base64.b64encode(img_io.read()).decode("utf-8")
 
@@ -105,20 +112,143 @@ def generate_wordcloud(words_as_long_string):
     # Close the Matplotlib figure to prevent displaying it
     #plt.close()
     #plt.figure(figsize =(8,4))
+
     #encoded_image = base64.b64encode(img.tostring()).decode("utf-8")
     return encoded_image
-
+    
 
 # Labeling Functions for prediction
 model_sentiment140_to_load = os.path.join(
     os.getcwd(), "dash_trained_saved_models/pipe_sentiment140_tweets.pkl"
 )
 pipe_sentiment140_tweets = joblib.load(model_sentiment140_to_load)
-#@labeling_function()
-#def sklearn_nb_clf(text):
+@labeling_function()
+def sklearn_nb_clf(text):
     # Decision of Classifier 1: SENTIMENT140
-    #return pipe_sentiment140_tweets.predict(text)[0]
-#    return text
+    return pipe_sentiment140_tweets.predict(text)[0]
+
+
+model_imdb_to_load = os.path.join(
+    os.getcwd(), "dash_trained_saved_models/pipe_imdb_reviews.pkl"
+)
+pipe_imdb_reviews = joblib.load(model_imdb_to_load)
+@labeling_function()
+def sklearn_nb_imdb_lf(text):
+    # Decision of Classifier 2: IMDB REVIEWS
+    return pipe_imdb_reviews.predict(text)[0]
+
+
+textblob_pa_clf = textblob.Blobber(analyzer=textblob.sentiments.PatternAnalyzer())
+@labeling_function()
+def textblob_pa_lf(text):
+    # Polarity of Classifier 3: RULES-BASED CLASSIFIER
+    # polarity, subjectivity = textblob_pa_clf(text["text"]).sentiment
+    polarity, subjectivity = textblob_pa_clf(str(text)).sentiment
+
+    if polarity > 0.33:
+        # if polarity > 0.5 and subjectivity > 0.5:
+        return 2
+
+    elif polarity > -0.33:
+        # elif -0.5 < polarity < 0.5 and subjectivity > 0.5:
+        return 1
+
+    # when (subjectivity <= 0.5) OR when (subjectivity > 0.5 but polarity <= -0.5)
+    return 0
+
+lfs = [textblob_pa_lf, sklearn_nb_imdb_lf, sklearn_nb_clf]
+
+# Function to Apply EXISTING Classifiers
+def sequentially_apply_all_3_Classifiers(df_with_text, list_of_labeling_functions):
+
+    applier = PandasLFApplier(list_of_labeling_functions)
+
+    List_predicted_labels = applier.apply(df_with_text.to_frame(), progress_bar=False)
+    return List_predicted_labels
+
+#L_train = sequentially_apply_all_3_Classifiers(airline_text, lfs)
+airline_text = df["text"]
+lfs = [textblob_pa_lf, sklearn_nb_imdb_lf, sklearn_nb_clf]
+L_train = sequentially_apply_all_3_Classifiers(airline_text, lfs)
+y_true = df["sentiment"]
+
+
+# Old technique: Label Model
+label_model = LabelModel(cardinality=3)
+label_model.fit(L_train, seed=SEED)
+
+
+# Train Model for New Technique
+def test_olm(k, alpha):
+    olm = OnlineLabelModel(cardinality=3)
+
+    batch_size = int(L_train.shape[0] / k)
+    folds = {}
+    y_fold = {}
+    for i in range(k):
+        start_index = i * batch_size
+        end_index = (i + 1) * batch_size
+        folds[i] = L_train[start_index:end_index, :]
+        y_fold[i] = y_true[start_index:end_index]
+
+    # Counter
+    fold_num = 0
+
+    scores = {}
+    lm_scores = {}
+
+    for fold in folds.values():
+        if fold_num == 0:
+            olm.fit(fold, seed=SEED)
+        else:
+            olm.partial_fit(fold, alpha=alpha, update_tree=True, seed=SEED)
+
+        # Get fold predictions
+        preds = olm.predict(fold)
+        lm_fold_preds = label_model.predict(fold)
+        lm_fold_acc = accuracy_score(y_fold[fold_num], lm_fold_preds)
+        lm_scores[fold_num] = lm_fold_acc
+
+        acc = accuracy_score(y_fold[fold_num], preds)
+        scores[fold_num] = acc
+        fold_num += 1
+
+    return lm_scores, scores, olm
+
+
+# Results Graphs
+optuna_number_of_batches = 916
+optuna_alpha = 0.988411594
+
+optuna_lm_scores_dict, optuna_scores_dict, olm_fitted = test_olm( k=optuna_number_of_batches, alpha=optuna_alpha)
+
+def plot_data(scores, lm_scores):   
+    lists = sorted(scores.items())
+    lists_lm = sorted(lm_scores.items())
+    x, y = zip(*lists)
+    x_lm, y_lm = zip(*lists_lm)
+    fig = go.Figure()
+    fig.add_traces(
+        go.Scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            line=dict(color="red"),
+            name="Accuracy of PER Batches Model",
+        )
+    )
+    fig.add_traces(
+        go.Scatter(
+            x=x_lm,
+            y=y_lm,
+            mode="lines",
+            line=dict(color="black"),
+            name="Accuracy of Usual Snorkel Labeling Model",
+        )
+    )
+
+    fig.update_layout(xaxis_title="Batch Number", yaxis_title="Accuracy")
+    return fig
 
 
 def accuracy_graph():
@@ -157,46 +287,6 @@ def accuracy_graph():
         )
 
     return fig
-
-
-
-def plot_data(scores, lm_scores):
-    lists = sorted(scores.items())
-    lists_lm = sorted(lm_scores.items())
-    x, y = zip(*lists)
-    x_lm, y_lm = zip(*lists_lm)
-    fig = go.Figure()
-    fig.add_traces(
-        go.Scatter(
-            x=x,
-            y=y,
-            mode="lines",
-            line=dict(color="red"),
-            name="Accuracy of PER Batches Model",
-        )
-    )
-    fig.add_traces(
-        go.Scatter(
-            x=x_lm,
-            y=y_lm,
-            mode="lines",
-            line=dict(color="black"),
-            name="Accuracy of Usual Snorkel Labeling Model",
-        )
-    )
-
-    fig.update_layout(xaxis_title="Batch Number", yaxis_title="Accuracy")
-    return fig
-
-file_to_load_scores_dict = os.path.join( os.getcwd(), "dash_texts_data/df_optuna_scores_dict.csv")
-df_optuna_scores_dict = pd.read_csv(file_to_load_scores_dict)
-optuna_scores_dict = df_optuna_scores_dict.to_dict()["Value"]
-file_to_load_lm_scores_dict = os.path.join( os.getcwd(), "dash_texts_data/df_optuna_lm_scores_dict.csv")
-df_optuna_lm_scores_dict = pd.read_csv(file_to_load_lm_scores_dict)
-optuna_lm_scores_dict = df_optuna_lm_scores_dict.to_dict()["Value"]
-
-
-
 
 
 
@@ -279,11 +369,11 @@ dash_app.layout = dbc.Container([  html.Br(),
                                                dmc.Col([ dcc.Graph(figure={'data': [], 'layout': {}}, id='graph-wordcloud')],
                                                          span=6
                                                        ),
-                                                  ]),
+                                                ]),
 
                                    html.Br(),
                                    html.Hr(),
-                                   html.P("Results:", style={'text-align': 'center', 'font-size': '30px'}),
+                                   html.P("New Technique Results Comparisons:", style={'text-align': 'center', 'font-size': '30px'}),
 
                                    html.Hr(),
                                    html.P("Accuracy Graphs:", style={'font-size': '25px'}),
@@ -297,27 +387,25 @@ dash_app.layout = dbc.Container([  html.Br(),
                                                         )
 
                                               ]),
-
+                                   
                                    html.Hr(),
                                    html.P("Tweet Prediction:", style={'font-size': '25px'}),
                                    dmc.Grid([
-                                               dmc.Col([dcc.Input(type='text', placeholder='Enter a Tweet here', size='lg',
+                                                dmc.Col([dcc.Input(type='text', placeholder='Enter a Tweet here', size='lg',
                                                           value='', id='field-to-enter-tweet')],
-                                                        span=4
-                                                      ),
+                                                         span=4
+                                                        ),
 
                                                # parameter "children" here is implicit
-                                               dmc.Col([html.Div(id='prediction-of-tweet-sentiment',
-                                                         style={'font-family': 'Arial', 'font-size': '25px'})],
-                                                          span=6
-                                                       ),
-                                               ]),
+                                               dmc.Col([html.Div(id='prediction-of-tweet-sentiment', style={'font-family': 'Arial', 'font-size': '25px'})],
+                                               span=6
+                                                        ),
+                                             ]),
 
                                    html.Br(),
                                    html.Br(),
                                    html.Br(),
                                    html.Br(),
-
 
                                    ], fluid=True
 
@@ -454,7 +542,7 @@ def update_wordcloud(chosen_airline):
                                 }
 
         text, concatenated_tokens = make_string_for_wordcloud(dict_of_users_tokens)
-        del concatenated_tokens
+        #del concatenated_tokens
         #print(text[0:50])
 
         try:
@@ -508,9 +596,8 @@ def update_tweet_prediction(value):
 
     if value:
         tweet_to_predict = pd.Series(value)
-        #tweet_sources_preds = sequentially_apply_all_3_Classifiers(tweet_to_predict, lfs)
-        #new_technique_pred = olm_fitted.predict(tweet_sources_preds)[0]
-        new_technique_pred = pipe_sentiment140_tweets.predict(tweet_to_predict)[0]
+        tweet_sources_preds = sequentially_apply_all_3_Classifiers(tweet_to_predict, lfs)
+        new_technique_pred = olm_fitted.predict(tweet_sources_preds)[0]
 
         return f'The New Technique Sentiment Prediction of {value} is: {new_technique_pred} (0= Negatif, 1= Neutral, 2= Positive) '
 

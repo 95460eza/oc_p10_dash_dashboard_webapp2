@@ -3,6 +3,7 @@
 #import warnings
 import os
 import io
+#import csv
 import random
 import base64
 from dash import Dash, html, dash_table, dcc, callback, Output, Input
@@ -11,6 +12,7 @@ import dash_mantine_components as dmc  # To define a grid on the page within whi
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 #import matplotlib.pyplot as plt
 import nltk
 # Download "stop words" list!!!
@@ -158,6 +160,45 @@ def accuracy_graph():
 
 
 
+def plot_data(scores, lm_scores):
+    lists = sorted(scores.items())
+    lists_lm = sorted(lm_scores.items())
+    x, y = zip(*lists)
+    x_lm, y_lm = zip(*lists_lm)
+    fig = go.Figure()
+    fig.add_traces(
+        go.Scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            line=dict(color="red"),
+            name="Accuracy of PER Batches Model",
+        )
+    )
+    fig.add_traces(
+        go.Scatter(
+            x=x_lm,
+            y=y_lm,
+            mode="lines",
+            line=dict(color="black"),
+            name="Accuracy of Usual Snorkel Labeling Model",
+        )
+    )
+
+    fig.update_layout(xaxis_title="Batch Number", yaxis_title="Accuracy")
+    return fig
+
+file_to_load_scores_dict = os.path.join( os.getcwd(), "dash_texts_data/df_optuna_scores_dict.csv")
+df_optuna_scores_dict = pd.read_csv(file_to_load_scores_dict)
+optuna_scores_dict = df_optuna_scores_dict.to_dict()["Value"]
+file_to_load_lm_scores_dict = os.path.join( os.getcwd(), "dash_texts_data/df_optuna_lm_scores_dict.csv")
+df_optuna_lm_scores_dict = pd.read_csv(file_to_load_lm_scores_dict)
+optuna_lm_scores_dict = df_optuna_lm_scores_dict.to_dict()["Value"]
+
+
+
+
+
 
 # Define the Web App Layout
 buttons_to_display_avgs = ['retweet_count', 'sentiment']
@@ -245,14 +286,17 @@ dash_app.layout = dbc.Container([  html.Br(),
                                    html.P("Results:", style={'text-align': 'center', 'font-size': '30px'}),
 
                                    html.Hr(),
-                                   html.P("Accuracy Comparison:", style={'font-size': '25px'}),
+                                   html.P("Accuracy Graphs:", style={'font-size': '25px'}),
                                    dmc.Grid([
-                                       dmc.Col([dcc.Graph(figure=accuracy_graph())],
-                                               span=6
-                                               ),
-                                   ]),
+                                               dmc.Col([dcc.Graph(figure=accuracy_graph())],
+                                                        span=6
+                                                        ),
 
+                                                dmc.Col([dcc.Graph(figure=plot_data(scores=optuna_scores_dict, lm_scores=optuna_lm_scores_dict))],
+                                                         span=6
+                                                        )
 
+                                              ]),
 
                                    ], fluid=True
 
