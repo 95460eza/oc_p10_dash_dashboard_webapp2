@@ -2,7 +2,7 @@
 
 #import warnings
 import os
-import io1
+import io
 #import csv
 import random
 import base64
@@ -160,12 +160,40 @@ def accuracy_graph():
 
 
 
-#file_to_load_scores_dict = os.path.join( os.getcwd(), "dash_texts_data/df_optuna_scores_dict.csv")
-#df_optuna_scores_dict = pd.read_csv(file_to_load_scores_dict)
-#optuna_scores_dict = df_optuna_scores_dict.to_dict()["Value"]
-#file_to_load_lm_scores_dict = os.path.join( os.getcwd(), "dash_texts_data/df_optuna_lm_scores_dict.csv")
-#df_optuna_lm_scores_dict = pd.read_csv(file_to_load_lm_scores_dict)
-#optuna_lm_scores_dict = df_optuna_lm_scores_dict.to_dict()["Value"]
+def plot_data(scores, lm_scores):
+    lists = sorted(scores.items())
+    lists_lm = sorted(lm_scores.items())
+    x, y = zip(*lists)
+    x_lm, y_lm = zip(*lists_lm)
+    fig = go.Figure()
+    fig.add_traces(
+        go.Scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            line=dict(color="red"),
+            name="Accuracy of PER Batches Model",
+        )
+    )
+    fig.add_traces(
+        go.Scatter(
+            x=x_lm,
+            y=y_lm,
+            mode="lines",
+            line=dict(color="black"),
+            name="Accuracy of Usual Snorkel Labeling Model",
+        )
+    )
+
+    fig.update_layout(xaxis_title="Batch Number", yaxis_title="Accuracy")
+    return fig
+
+file_to_load_scores_dict = os.path.join( os.getcwd(), "dash_texts_data/df_optuna_scores_dict.csv")
+df_optuna_scores_dict = pd.read_csv(file_to_load_scores_dict)
+optuna_scores_dict = df_optuna_scores_dict.to_dict()["Value"]
+file_to_load_lm_scores_dict = os.path.join( os.getcwd(), "dash_texts_data/df_optuna_lm_scores_dict.csv")
+df_optuna_lm_scores_dict = pd.read_csv(file_to_load_lm_scores_dict)
+optuna_lm_scores_dict = df_optuna_lm_scores_dict.to_dict()["Value"]
 
 
 
