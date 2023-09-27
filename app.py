@@ -292,9 +292,9 @@ dash_app.layout = dbc.Container([  html.Br(),
                                                         span=6
                                                         ),
 
-                                                #dmc.Col([dcc.Graph(figure=plot_data(scores=optuna_scores_dict, lm_scores=optuna_lm_scores_dict))],
-                                                 #        span=6
-                                                  #      )
+                                                dmc.Col([dcc.Graph(figure=plot_data(scores=optuna_scores_dict, lm_scores=optuna_lm_scores_dict))],
+                                                         span=6
+                                                        )
 
                                               ]),
 
